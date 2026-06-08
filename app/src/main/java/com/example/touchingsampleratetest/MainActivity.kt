@@ -22,7 +22,7 @@ import java.util.LinkedList
 
 class MainActivity : ComponentActivity() {
     private var onSampleRateUpdate: ((Int) -> Unit)? = null
-    private var onDeviceUpdate: ((String) -> Unit)? = null
+    private var onDeviceUpdate: ((String, Int) -> Unit)? = null
     private val timestamps = LinkedList<Long>()
     private val MAX_SAMPLES = 60
 
@@ -31,9 +31,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             var sampleRate by remember { mutableStateOf(0) }
             var deviceName by remember { mutableStateOf("未检测到设备") }
+            var deviceId by remember { mutableStateOf(-1) }
             
             onSampleRateUpdate = { sampleRate = it }
-            onDeviceUpdate = { deviceName = it }
+            onDeviceUpdate = { name, id ->
+                deviceName = name
+                deviceId = id
+            }
 
             Box(
                 modifier = Modifier
@@ -42,7 +46,7 @@ class MainActivity : ComponentActivity() {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "${sampleRate} Hz\n${deviceName}",
+                    text = "${sampleRate} Hz\n${deviceName}\nDevice ID: ${deviceId}",
                     color = Color(0xFFFFFFFF),
                     fontSize = 48.sp,
                     fontFamily = FontFamily.Monospace,
@@ -72,11 +76,10 @@ class MainActivity : ComponentActivity() {
                     onSampleRateUpdate?.invoke(newRate)
                 }
 
-                // 获取输入设备信息
-                val deviceId = event.deviceId
-                val inputDevice = InputDevice.getDevice(deviceId)
+                val inputDeviceId = event.deviceId
+                val inputDevice = InputDevice.getDevice(inputDeviceId)
                 val deviceName = inputDevice?.name ?: "未知设备"
-                onDeviceUpdate?.invoke(deviceName)
+                onDeviceUpdate?.invoke(deviceName, inputDeviceId)
             }
             MotionEvent.ACTION_UP,
             MotionEvent.ACTION_CANCEL -> {
