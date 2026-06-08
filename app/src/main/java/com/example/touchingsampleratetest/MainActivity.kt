@@ -1,6 +1,7 @@
 package com.example.touchingsampleratetest
 
 import android.os.Bundle
+import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ import java.util.LinkedList
 
 class MainActivity : ComponentActivity() {
     private var onSampleRateUpdate: ((Int) -> Unit)? = null
+    private var onDeviceUpdate: ((String) -> Unit)? = null
     private val timestamps = LinkedList<Long>()
     private val MAX_SAMPLES = 60
 
@@ -28,8 +30,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             var sampleRate by remember { mutableStateOf(0) }
+            var deviceName by remember { mutableStateOf("未检测到设备") }
             
             onSampleRateUpdate = { sampleRate = it }
+            onDeviceUpdate = { deviceName = it }
 
             Box(
                 modifier = Modifier
@@ -38,10 +42,11 @@ class MainActivity : ComponentActivity() {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "${sampleRate} Hz",
+                    text = "${sampleRate} Hz\n${deviceName}",
                     color = Color(0xFFFFFFFF),
                     fontSize = 48.sp,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
         }
@@ -66,6 +71,12 @@ class MainActivity : ComponentActivity() {
                     val newRate = if (duration > 0) (count / duration).toInt() else 0
                     onSampleRateUpdate?.invoke(newRate)
                 }
+
+                // 获取输入设备信息
+                val deviceId = event.deviceId
+                val inputDevice = InputDevice.getDevice(deviceId)
+                val deviceName = inputDevice?.name ?: "未知设备"
+                onDeviceUpdate?.invoke(deviceName)
             }
             MotionEvent.ACTION_UP,
             MotionEvent.ACTION_CANCEL -> {
