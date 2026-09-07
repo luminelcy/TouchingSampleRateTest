@@ -134,6 +134,14 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                        for (i in points.indices) {
+                            val alpha = (i + 1).toFloat() / points.size
+                            drawCircle(
+                                color = Color(0xFFFF0000).copy(alpha = alpha),
+                                radius = 6f,
+                                center = points[i]
+                            )
+                        }
                         if (points.isNotEmpty()) {
                             val last = points.last()
                             drawCircle(
