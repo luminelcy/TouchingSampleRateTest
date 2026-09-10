@@ -49,6 +49,14 @@ class MainActivity : ComponentActivity() {
     private var updateDeviceInfo: ((String, Int) -> Unit)? = null
     private var useUnbuffered = false
 
+    /** 由窗口内时间戳计算采样率。N 个点之间只有 N-1 个间隔；跨度为 0 时返回 null。 */
+    private fun sampleRateOf(times: List<Long>): Int? {
+        if (times.size < 2) return null
+        val spanMs = times.last() - times.first()
+        if (spanMs <= 0) return null
+        return ((times.size - 1) * 1000.0 / spanMs).toInt()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -85,15 +93,11 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .pointerInput(Unit) {
                                 awaitEachGesture {
-                                    // Unbuffered 的请求已由 dispatchTouchEvent 用真实事件完成，
-                                    // 这里不再需要伪造 MotionEvent
                                     val down = awaitFirstDown(requireUnconsumed = false)
                                     trailPoints.clear()
                                     trailPoints.add(down.position)
                                     val now = SystemClock.elapsedRealtime()
-                                    // raw 用回调时刻（elapsedRealtime）；w/ history 用事件时刻
-                                    // （uptimeMillis，历史点只有这个时钟可用）。两个链表各自内部
-                                    // 时钟一致，因此各自算出的时间跨度都是有效的。
+                                    // 两个链表用的时钟不同，但各自内部一致，跨度仍然有效
                                     timestamps.clear()
                                     fullTimestamps.clear()
                                     timestamps.addLast(now)
@@ -113,14 +117,8 @@ class MainActivity : ComponentActivity() {
                                         fullTimestamps.addLast(change.uptimeMillis)
                                         while (timestamps.size > MAX_SAMPLES) timestamps.removeFirst()
                                         while (fullTimestamps.size > MAX_SAMPLES) fullTimestamps.removeFirst()
-                                        if (timestamps.size >= 2) {
-                                            val duration = (timestamps.last() - timestamps.first()).toDouble() / 1000.0
-                                            updateSampleRate?.invoke((timestamps.size / duration).toInt())
-                                        }
-                                        if (fullTimestamps.size >= 2) {
-                                            val fullDuration = (fullTimestamps.last() - fullTimestamps.first()).toDouble() / 1000.0
-                                            updateFullSampleRate?.invoke((fullTimestamps.size / fullDuration).toInt())
-                                        }
+                                        sampleRateOf(timestamps)?.let { updateSampleRate?.invoke(it) }
+                                        sampleRateOf(fullTimestamps)?.let { updateFullSampleRate?.invoke(it) }
                                     }
                                     trailPoints.clear()
                                     timestamps.clear()
@@ -222,11 +220,8 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * 在手势进入 App 的最早时机请求取消批量投递。
-     *
-     * requestUnbufferedDispatch 只接受 ACTION_DOWN / ACTION_MOVE 的真实触摸事件
-     * （见 View.requestUnbufferedDispatch 的实现），因此必须在这里用系统派发下来的
-     * 原始事件调用，而不是在 Compose 手势回调里用 MotionEvent.obtain 伪造一个。
+     * 用系统派发的真实事件请求取消批量投递，这是事件进入 App 的最早时机。
+     * 别改回用 MotionEvent.obtain 伪造事件 —— 那样能否生效取决于它的默认 source。
      */
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         if (useUnbuffered && event.actionMasked == MotionEvent.ACTION_DOWN) {
@@ -254,14 +249,8 @@ class MainActivity : ComponentActivity() {
                 fullTimestamps.addLast(event.eventTime)
                 while (timestamps.size > MAX_SAMPLES) timestamps.removeFirst()
                 while (fullTimestamps.size > MAX_SAMPLES) fullTimestamps.removeFirst()
-                if (timestamps.size >= 2) {
-                    val duration = (timestamps.last() - timestamps.first()).toDouble() / 1000.0
-                    updateSampleRate?.invoke((timestamps.size / duration).toInt())
-                }
-                if (fullTimestamps.size >= 2) {
-                    val fullDuration = (fullTimestamps.last() - fullTimestamps.first()).toDouble() / 1000.0
-                    updateFullSampleRate?.invoke((fullTimestamps.size / fullDuration).toInt())
-                }
+                sampleRateOf(timestamps)?.let { updateSampleRate?.invoke(it) }
+                sampleRateOf(fullTimestamps)?.let { updateFullSampleRate?.invoke(it) }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 timestamps.clear()
