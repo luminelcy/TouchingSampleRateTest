@@ -7,8 +7,8 @@ Android 触摸采样率测试工具。实时显示设备的触摸采样率，并
 - **实时采样率显示** — 同时展示两种采样率：
   - `raw`：仅统计 MotionEvent 回调的时间戳（受 InputDispatcher 投递超时和 UI 线程调度间隔影响）
   - `w/ history`：包含 `getHistoricalEventTime` 中的历史采样点，更接近硬件真实采样率
-- **Unbuffered 开关** — 调用 `requestUnbufferedDispatch`（Android 13+）取消 InputDispatcher 的投递超时等待，使触摸事件逐点投递
-- **Trail 开关** — 显示触摸拖尾轨迹，绿色线条为轨迹，红色圆点为每个采样点，可直观判断触控是否平滑
+- **Unbuffered 开关** — 调用 `requestUnbufferedDispatch`（Android 13+）取消 InputDispatcher 的投递超时等待，使触摸事件逐点投递。Android 13 以下的设备上该开关置灰不可用
+- **Trail 开关** — 显示触摸拖尾轨迹：绿色线条为轨迹，红色圆点为每个采样点（透明度随新旧渐增），末端为绿底白心的高亮圆点，可直观判断触控是否平滑
 - **自适应布局** — 根据屏幕宽度自动缩放字号，兼容手机和平板
 
 ## 原理
@@ -19,6 +19,9 @@ Android 触摸事件在 InputReader、InputDispatcher 层会被短暂积攒后�
 
 ## 环境要求
 
-- Android Studio Hedgehog 或更高版本
-- minSdk 24
-- Unbuffered 功能需要 Android 13（API 33）及以上设备
+**运行环境**
+
+- minSdk 30（Android 11），targetSdk / compileSdk 36（Android 16）
+- Unbuffered 功能需要 Android 13（API 33）及以上设备，更低版本上开关置灰不可用
+
+
