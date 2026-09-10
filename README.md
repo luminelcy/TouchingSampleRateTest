@@ -1,6 +1,6 @@
 # TouchingSampleRateTest
 
-Android 触摸采样率测试工具。实时显示设备的触摸采样率，并提供可视化拖尾效果来直观感受触控跟手性。
+Android 触摸采样率测试工具。实时显示设备的触摸采样率。
 
 ## 功能
 
@@ -21,6 +21,6 @@ Android 触摸事件在 InputReader、InputDispatcher 层会被短暂积攒后�
 
 **运行环境**
 
-- minSdk 30（Android 11），targetSdk / compileSdk 36（Android 16）
+- minSdk 30（Android 11）
 
 
