@@ -102,18 +102,26 @@ class MainActivity : ComponentActivity() {
                                     trailPoints.clear()
                                     trailPoints.add(down.position)
                                     val now = SystemClock.elapsedRealtime()
+                                    // raw 用回调时刻（elapsedRealtime）；w/ history 用事件时刻
+                                    // （uptimeMillis，历史点只有这个时钟可用）。两个链表各自内部
+                                    // 时钟一致，因此各自算出的时间跨度都是有效的。
                                     timestamps.clear()
                                     fullTimestamps.clear()
                                     timestamps.addLast(now)
-                                    fullTimestamps.addLast(now)
+                                    fullTimestamps.addLast(down.uptimeMillis)
                                     drag(down.id) { change ->
                                         trailPoints.add(change.position)
                                         if (trailPoints.size > MAX_SAMPLES) {
                                             trailPoints.removeAt(0)
                                         }
+                                        // 批量投递时积攒的中间采样点：时间早于 change 自身，先入队
+                                        val historical = change.historical
+                                        for (i in historical.indices) {
+                                            fullTimestamps.addLast(historical[i].uptimeMillis)
+                                        }
                                         val dragNow = SystemClock.elapsedRealtime()
                                         timestamps.addLast(dragNow)
-                                        fullTimestamps.addLast(dragNow)
+                                        fullTimestamps.addLast(change.uptimeMillis)
                                         while (timestamps.size > MAX_SAMPLES) timestamps.removeFirst()
                                         while (fullTimestamps.size > MAX_SAMPLES) fullTimestamps.removeFirst()
                                         if (timestamps.size >= 2) {
