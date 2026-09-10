@@ -1,6 +1,5 @@
 package com.example.touchingsampleratetest
 
-import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.InputDevice
@@ -86,19 +85,9 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .pointerInput(Unit) {
                                 awaitEachGesture {
+                                    // Unbuffered 的请求已由 dispatchTouchEvent 用真实事件完成，
+                                    // 这里不再需要伪造 MotionEvent
                                     val down = awaitFirstDown(requireUnconsumed = false)
-                                    if (useUnbuffered && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        val syntheticEvent = MotionEvent.obtain(
-                                            SystemClock.uptimeMillis(),
-                                            SystemClock.uptimeMillis(),
-                                            MotionEvent.ACTION_DOWN,
-                                            down.position.x,
-                                            down.position.y,
-                                            0
-                                        )
-                                        window.decorView.requestUnbufferedDispatch(syntheticEvent)
-                                        syntheticEvent.recycle()
-                                    }
                                     trailPoints.clear()
                                     trailPoints.add(down.position)
                                     val now = SystemClock.elapsedRealtime()
@@ -202,8 +191,7 @@ class MainActivity : ComponentActivity() {
                             onCheckedChange = {
                                 unbuffered = it
                                 useUnbuffered = it
-                            },
-                            enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                            }
                         )
                     }
                     Spacer(modifier = Modifier.height(switchSpacing))
@@ -233,12 +221,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * 在手势进入 App 的最早时机请求取消批量投递。
+     *
+     * requestUnbufferedDispatch 只接受 ACTION_DOWN / ACTION_MOVE 的真实触摸事件
+     * （见 View.requestUnbufferedDispatch 的实现），因此必须在这里用系统派发下来的
+     * 原始事件调用，而不是在 Compose 手势回调里用 MotionEvent.obtain 伪造一个。
+     */
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (useUnbuffered && event.actionMasked == MotionEvent.ACTION_DOWN) {
+            window.decorView.requestUnbufferedDispatch(event)
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                if (useUnbuffered && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    window.decorView.requestUnbufferedDispatch(event)
-                }
                 timestamps.clear()
                 fullTimestamps.clear()
                 timestamps.addLast(event.eventTime)
