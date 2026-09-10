@@ -128,6 +128,8 @@ class MainActivity : ComponentActivity() {
                                     trailPoints.clear()
                                     timestamps.clear()
                                     fullTimestamps.clear()
+                                    updateSampleRate?.invoke(0)
+                                    updateFullSampleRate?.invoke(0)
                                 }
                             }
                     ) {
@@ -213,6 +215,8 @@ class MainActivity : ComponentActivity() {
                             onCheckedChange = {
                                 showTrail = it
                                 trailPoints.clear()
+                                updateSampleRate?.invoke(0)
+                                updateFullSampleRate?.invoke(0)
                             }
                         )
                     }
@@ -255,6 +259,8 @@ class MainActivity : ComponentActivity() {
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 timestamps.clear()
                 fullTimestamps.clear()
+                updateSampleRate?.invoke(0)
+                updateFullSampleRate?.invoke(0)
             }
         }
         return true
