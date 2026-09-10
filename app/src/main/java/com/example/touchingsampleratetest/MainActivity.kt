@@ -14,6 +14,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -66,10 +68,18 @@ class MainActivity : ComponentActivity() {
                 deviceId = id
             }
 
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier.fillMaxSize().background(Color(0xFF000000)),
                 contentAlignment = Alignment.Center
             ) {
+                val screenWidthPx = constraints.maxWidth.toFloat()
+                val density = LocalDensity.current.density
+                val screenWidthDp = screenWidthPx / density
+                val scale = (screenWidthDp / 800f).coerceIn(0.5f, 1.5f)
+                val mainFontSize = (48 * scale).sp
+                val labelFontSize = (24 * scale).sp
+                val switchSpacing = (12 * scale).dp
+                val sectionSpacing = (16 * scale).dp
                 if (showTrail) {
                     Canvas(
                         modifier = Modifier
@@ -161,11 +171,11 @@ class MainActivity : ComponentActivity() {
                     Text(
                         text = "${sampleRate} Hz (raw)\n${fullSampleRate} Hz (w/ history)\n${deviceName}\nDevice ID: ${deviceId}",
                         color = Color(0xFFFFFFFF),
-                        fontSize = 48.sp,
+                        fontSize = mainFontSize,
                         fontFamily = FontFamily.Monospace,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.padding(16.dp))
+                    Spacer(modifier = Modifier.padding(sectionSpacing))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
@@ -173,10 +183,10 @@ class MainActivity : ComponentActivity() {
                         Text(
                             text = "Unbuffered",
                             color = Color(0xFFFFFFFF),
-                            fontSize = 24.sp,
+                            fontSize = labelFontSize,
                             fontFamily = FontFamily.Monospace
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(switchSpacing))
                         Switch(
                             checked = unbuffered,
                             onCheckedChange = {
@@ -186,7 +196,7 @@ class MainActivity : ComponentActivity() {
                             enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                         )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(switchSpacing))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
@@ -194,10 +204,10 @@ class MainActivity : ComponentActivity() {
                         Text(
                             text = "Trail",
                             color = Color(0xFFFFFFFF),
-                            fontSize = 24.sp,
+                            fontSize = labelFontSize,
                             fontFamily = FontFamily.Monospace
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(switchSpacing))
                         Switch(
                             checked = showTrail,
                             onCheckedChange = {
