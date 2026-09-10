@@ -19,3 +19,5 @@ local.properties
 *.keystore
 google-services.json
 
+# release 签名凭据
+keystore.properties
